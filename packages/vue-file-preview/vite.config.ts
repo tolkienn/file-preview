@@ -186,7 +186,7 @@ export default defineConfig(({ mode }) => {
             }
           : undefined,
       },
-      sourcemap: true,
+      sourcemap: false,
       // ESM 第一次构建清空 lib;CJS 第二次构建保留 ESM 产物
       emptyOutDir: isEsm,
       outDir: 'lib',

@@ -73,10 +73,9 @@ export default defineConfig({
         defaultHandler(warning);
       },
     },
-    sourcemap: true,
-    // 改为 false 避免 watch / 并发 build 场景下短暂清空 lib 触发下游 `ENOENT` 报错。
-    // 代价：lib 内会累积旧 chunk hash 文件。发布前用 `rm -rf lib && pnpm build` 干净构建。
-    emptyOutDir: false,
+    sourcemap: false,
+    // dev 脚本通过 CLI 覆盖为 false，watch 时不会短暂清空 lib。
+    emptyOutDir: true,
     outDir: 'lib',
   },
 });

@@ -22,7 +22,7 @@
     "noFallthroughCasesInSwitch": true,
     /* Declaration */
     "declaration": true,
-    "declarationMap": true,
+    "declarationMap": false,
     "emitDeclarationOnly": true,
     "outDir": "./lib",
     "rootDir": "./src"
