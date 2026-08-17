@@ -27,9 +27,9 @@ test('framework entries export documented request types', async () => {
   }
 });
 
-test('file type detection covers documented representative formats', async () => {
+test('file type detection and highlighting cover documented representative formats', async () => {
   const coreUrl = pathToFileURL(path.join(root, 'packages/file-preview-core/lib/index.mjs')).href;
-  const { getFileType } = await import(coreUrl);
+  const { getFileType, getLanguageFromFileName } = await import(coreUrl);
   const cases = {
     'photo.heic': 'image',
     'scan.tiff': 'image',
@@ -39,10 +39,47 @@ test('file type detection covers documented representative formats', async () =>
     'captions.ttml': 'subtitle',
     'model.glb': 'cad',
     'config.toml': 'text',
+    'Component.vue': 'text',
+    'App.svelte': 'text',
+    'Page.astro': 'text',
+    'main.dart': 'text',
+    'schema.graphql': 'text',
+    'query.gql': 'text',
+    'api.proto': 'text',
+    'schema.prisma': 'text',
+    'main.tf': 'text',
+    'production.tfvars': 'text',
+    'deploy.ps1': 'text',
+    'Main.scala': 'text',
+    Dockerfile: 'text',
+    Makefile: 'text',
+    'docker/Dockerfile': 'text',
   };
 
   for (const [name, expected] of Object.entries(cases)) {
     assert.equal(getFileType({ id: name, name, url: name, type: '' }), expected);
+  }
+
+  const languageCases = {
+    'Component.vue': 'vue',
+    'App.svelte': 'svelte',
+    'Page.astro': 'astro',
+    'main.dart': 'dart',
+    'schema.graphql': 'graphql',
+    'query.gql': 'graphql',
+    'api.proto': 'proto',
+    'schema.prisma': 'prisma',
+    'main.tf': 'terraform',
+    'production.tfvars': 'terraform',
+    'deploy.ps1': 'powershell',
+    'Main.scala': 'scala',
+    Dockerfile: 'dockerfile',
+    Makefile: 'makefile',
+    'docker/Dockerfile': 'dockerfile',
+  };
+
+  for (const [name, expected] of Object.entries(languageCases)) {
+    assert.equal(getLanguageFromFileName(name), expected);
   }
 });
 

@@ -1,10 +1,17 @@
 import type { PreviewFile, FileType } from '../types';
 
+const specialCodeFileLanguages: Record<string, string> = {
+  dockerfile: 'dockerfile',
+  makefile: 'makefile',
+};
+
 /**
  * 根据 PreviewFile 的 mime 类型和文件名后缀推断文件类型
  */
 export function getFileType(file: PreviewFile): FileType {
   const ext = file.name.split('.').pop()?.toLowerCase() || '';
+  const lowerFileName = file.name.toLowerCase();
+  const lowerBaseName = lowerFileName.split(/[\\/]/).pop() || '';
   const mimeType = file.type.toLowerCase();
 
   if (
@@ -100,13 +107,19 @@ export function getFileType(file: PreviewFile): FileType {
   const textExtensions = [
     'txt', 'log', 'lock',
     'js', 'jsx', 'ts', 'tsx', 'cjs', 'mjs', 'cts', 'mts',
-    'py', 'java', 'cpp', 'c', 'h', 'cs', 'php', 'rb', 'go', 'mod', 'rs', 'swift', 'kt', 'lua', 'vim',
-    'html', 'css', 'scss', 'sass', 'less',
+    'py', 'java', 'cpp', 'c', 'h', 'cs', 'php', 'rb', 'go', 'mod', 'rs', 'swift', 'kt', 'scala', 'lua', 'vim',
+    'html', 'vue', 'svelte', 'astro', 'css', 'scss', 'sass', 'less',
+    'dart', 'graphql', 'gql', 'proto', 'prisma',
     'yaml', 'yml', 'toml', 'ini', 'conf', 'env',
+    'tf', 'tfvars',
     'diff', 'patch',
-    'sh', 'bash', 'zsh', 'sql',
+    'sh', 'bash', 'zsh', 'ps1', 'sql',
   ];
-  if (mimeType.startsWith('text/') || textExtensions.includes(ext)) {
+  if (
+    mimeType.startsWith('text/') ||
+    textExtensions.includes(ext) ||
+    specialCodeFileLanguages[lowerBaseName]
+  ) {
     return 'text';
   }
   // 识别以 . 开头的配置文件（如 .gitignore, .prettierrc, .zshrc 等）
@@ -120,7 +133,14 @@ export function getFileType(file: PreviewFile): FileType {
  * 根据文件名后缀推断代码高亮语言
  */
 export function getLanguageFromFileName(fileName: string): string {
-  const ext = fileName.split('.').pop()?.toLowerCase() || '';
+  const lowerFileName = fileName.toLowerCase();
+  const ext = lowerFileName.split('.').pop() || '';
+  const lowerBaseName = lowerFileName.split(/[\\/]/).pop() || '';
+  const specialLanguage = specialCodeFileLanguages[lowerBaseName];
+  if (specialLanguage) {
+    return specialLanguage;
+  }
+
   const languageMap: Record<string, string> = {
     js: 'javascript',
     jsx: 'jsx',
@@ -142,9 +162,9 @@ export function getLanguageFromFileName(fileName: string): string {
     rs: 'rust',
     swift: 'swift',
     kt: 'kotlin',
+    scala: 'scala',
     lua: 'lua',
     vim: 'vim',
-    scala: 'scala',
     sh: 'bash',
     bash: 'bash',
     zsh: 'bash',
@@ -152,10 +172,18 @@ export function getLanguageFromFileName(fileName: string): string {
     jsonc: 'json',
     xml: 'xml',
     html: 'html',
+    vue: 'vue',
+    svelte: 'svelte',
+    astro: 'astro',
     css: 'css',
     scss: 'scss',
     sass: 'sass',
     less: 'less',
+    dart: 'dart',
+    graphql: 'graphql',
+    gql: 'graphql',
+    proto: 'proto',
+    prisma: 'prisma',
     sql: 'sql',
     yaml: 'yaml',
     yml: 'yaml',
@@ -163,8 +191,11 @@ export function getLanguageFromFileName(fileName: string): string {
     ini: 'ini',
     env: 'bash',
     conf: 'nginx',
+    tf: 'terraform',
+    tfvars: 'terraform',
     diff: 'diff',
     patch: 'diff',
+    ps1: 'powershell',
     log: 'log',
     md: 'markdown',
     txt: 'text',
@@ -177,7 +208,7 @@ export function getLanguageFromFileName(fileName: string): string {
 
   // 处理以 . 开头的配置文件（无扩展名或特殊命名）
   if (fileName.startsWith('.')) {
-    const fullName = fileName.toLowerCase();
+    const fullName = lowerFileName;
     const configFileMap: Record<string, string> = {
       // Git 相关
       '.gitignore': 'ini',
