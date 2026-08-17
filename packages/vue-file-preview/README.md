@@ -278,7 +278,7 @@ Differences from `FilePreviewModal`:
 
 ### Code & Text
 - **Markdown**: GitHub Flavored Markdown, code highlighting
-- **Code Files**: JS, TS, Python, Java, C++, Go, Rust, and 40+ languages
+- **Code Files**: Vue, Svelte, Astro, JS/TS, Dart, GraphQL, Protobuf, Prisma, Terraform, PowerShell, Scala, and 40+ languages
 - **Config/Logs**: YAML, TOML, INI, ENV, LOG, DIFF, PATCH, etc.
 
 ### Structured Data

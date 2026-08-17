@@ -348,7 +348,7 @@ const files = [
 
 ### 代码 & 文本
 - **Markdown**: GitHub Flavored Markdown,代码高亮
-- **代码文件**: JS, TS, Python, Java, C++, Go, Rust 等 40+ 种语言
+- **代码文件**: Vue、Svelte、Astro、JS/TS、Dart、GraphQL、Protobuf、Prisma、Terraform、PowerShell、Scala 等 40+ 种语言
 - **配置 / 日志**: YAML, TOML, INI, ENV, LOG, DIFF, PATCH 等
 
 ### 结构化数据

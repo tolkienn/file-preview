@@ -244,6 +244,8 @@ File Preview 支持多种常见文件格式，React 与 Vue 版本共享类型�
 支持 40+ 种编程语言的语法高亮：
 
 - **JavaScript/TypeScript** - `.js`, `.jsx`, `.ts`, `.tsx`
+- **前端组件** - `.vue`, `.svelte`, `.astro`
+- **Dart** - `.dart`
 - **Python** - `.py`
 - **Java** - `.java`
 - **C/C++** - `.c`, `.cpp`, `.h`
@@ -256,14 +258,20 @@ File Preview 支持多种常见文件格式，React 与 Vue 版本共享类型�
 - **Ruby** - `.rb`
 - **Swift** - `.swift`
 - **Kotlin** - `.kt`
+- **Scala** - `.scala`
 - **HTML** - `.html`
 - **CSS/SCSS/Sass/Less** - `.css`, `.scss`, `.sass`, `.less`
 - **YAML** - `.yaml`, `.yml`
 - **TOML** - `.toml`
+- **GraphQL** - `.graphql`, `.gql`
+- **Protocol Buffers** - `.proto`
+- **Prisma Schema** - `.prisma`
+- **Terraform** - `.tf`, `.tfvars`
 - **INI** - `.ini`, `.conf`, `.env`
 - **Lock 文件** - `.lock`
 - **Diff/Patch** - `.diff`, `.patch`
-- **Shell** - `.sh`, `.bash`, `.zsh`
+- **Shell** - `.sh`, `.bash`, `.zsh`, `.ps1`
+- **构建文件** - `Dockerfile`, `Makefile`
 - **SQL** - `.sql`
 - **Log** - `.log`
 
