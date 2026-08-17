@@ -542,11 +542,7 @@ All built-in renderers use code-splitting via `defineAsyncComponent` to minimize
 - **Loading**: Each renderer is a separate chunk, loaded on-demand when needed
 - **Fallback**: `RendererLoading` component handles the loading state
 
-**Bundle Size Impact:**
-
-- Main entry point: gzip ≤ 60 KB (strictly enforced by CI)
-- Each renderer: separate async chunk
-- Total library: gzip ≤ 3 MB (all ESM chunks and CSS combined)
+Each renderer is emitted as a separate async chunk and loaded only when needed.
 
 **Implementation Example:**
 

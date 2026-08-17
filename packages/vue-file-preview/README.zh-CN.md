@@ -542,11 +542,7 @@ const files = [
 - **加载**：每个渲染器是独立的 chunk，按需加载
 - **回退**：`RendererLoading` 组件处理加载状态
 
-**打包体积影响：**
-
-- 主入口：gzip ≤ 60 KB（CI 强制约束）
-- 每个渲染器：独立异步 chunk
-- 整个库：gzip ≤ 3 MB（所有 ESM chunk 与 CSS 合计）
+每个渲染器都会输出为独立异步 chunk，并仅在需要时加载。
 
 **实现示例：**
 

@@ -702,11 +702,7 @@ All built-in renderers use code-splitting via `React.lazy` to minimize the main 
 - **Loading**: Each renderer is a separate chunk, loaded on-demand when needed
 - **Fallback**: `<Suspense>` with `<RendererLoading />` handles the loading state
 
-**Bundle Size Impact:**
-
-- Main entry point: gzip ≤ 80 KB (strictly enforced by CI)
-- Each renderer: separate async chunk
-- Total library: gzip ≤ 3 MB (all ESM chunks and CSS combined)
+Each renderer is emitted as a separate async chunk and loaded only when needed.
 
 **Implementation Example:**
 

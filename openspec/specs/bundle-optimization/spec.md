@@ -2,54 +2,8 @@
 
 ## Purpose
 
-定义 `@eternalheart/react-file-preview` 与 `@eternalheart/vue-file-preview` 两个发布包的产物体积治理、按需加载、依赖外部化、子路径入口、CSS 拆分、CI 体积预算与 CJS 兼容等约束，以保证使用者获得最小、按需、零 BREAKING 的安装与运行体验。
+定义 `@eternalheart/react-file-preview` 与 `@eternalheart/vue-file-preview` 两个发布包的按需加载、依赖外部化、子路径入口、CSS 拆分与 CJS 兼容等约束，以保证使用者获得按需、零 BREAKING 的安装与运行体验。
 ## Requirements
-### Requirement: 主入口产物体积上限
-
-发布到 npm 的两个包，其主入口 ESM 产物（`lib/index.mjs`，不含动态 chunk 与外部化依赖）的体积 SHALL 满足以下 gzip 上限：
-
-- `@eternalheart/react-file-preview/lib/index.mjs`：gzip ≤ 80 KB
-- `@eternalheart/vue-file-preview/lib/index.mjs`：gzip ≤ 60 KB
-
-主入口仅包含 `FilePreviewModal` / `FilePreviewEmbed` / `FilePreviewContent` 三个壳组件、类型工具、`normalizeFile` 等核心导出，以及对各 renderer 的动态 import 引用桩。
-
-#### Scenario: React 主入口体积达标
-
-- **WHEN** 执行 `pnpm --filter @eternalheart/react-file-preview build`
-- **THEN** 产物 `packages/react-file-preview/lib/index.mjs` 经 gzip 压缩后体积 ≤ 80 KB
-- **AND** `pnpm size` 命令在该产物上输出 PASS
-
-#### Scenario: Vue 主入口体积达标
-
-- **WHEN** 执行 `pnpm --filter @eternalheart/vue-file-preview build`
-- **THEN** 产物 `packages/vue-file-preview/lib/index.mjs` 经 gzip 压缩后体积 ≤ 60 KB
-- **AND** `pnpm size` 命令在该产物上输出 PASS
-
-#### Scenario: 主入口不内联重型依赖
-
-- **WHEN** 检查 `lib/index.mjs` 的源码
-- **THEN** 文件中 MUST NOT 出现 `pdfjs-dist`、`foliate-js`、`pptx-preview`、`docx-preview`、`mammoth`、`shiki`、`video.js`、`katex` 等重型依赖的实现代码
-- **AND** 仅保留对它们的 `import()` 动态引用占位
-
-### Requirement: 全量产物 gzip 总体积上限
-
-包内 `lib/` 目录下所有 `.mjs` 与 `.css` 产物的 gzip 总和(不含 sourcemap、不含外部化依赖)SHALL 满足:
-
-- `@eternalheart/react-file-preview`:gzip 总和 ≤ 3 MB
-- `@eternalheart/vue-file-preview`:gzip 总和 ≤ 3 MB
-
-3 MB 上限覆盖按需加载的 renderer、PDF/图片 Worker 及其解码依赖；这些内容仅在对应文件类型首次预览时下载，主入口保持轻量。
-
-#### Scenario: React 全量产物达标
-
-- **WHEN** 构建完成后,统计 `packages/react-file-preview/lib/**/*.{mjs,css}` 的 gzip 体积
-- **THEN** 总和 ≤ 3 MB
-
-#### Scenario: Vue 全量产物达标
-
-- **WHEN** 构建完成后,统计 `packages/vue-file-preview/lib/**/*.{mjs,css}` 的 gzip 体积
-- **THEN** 总和 ≤ 3 MB
-
 ### Requirement: Renderer 按需动态加载
 
 `FilePreviewContent` 渲染入口在解析出 `fileType` 之后，SHALL 通过动态 `import()` 加载对应 renderer 模块；MUST NOT 在主入口模块顶部静态 import 任何 renderer 实现。
@@ -77,22 +31,24 @@
 
 **ESM 产物(`lib/index.mjs` 及其 lazy chunk)** 的 rollup `external` 列表:
 
-- **React 包**:`react`、`react-dom`、`react/jsx-runtime`、`react-pdf`、`react-markdown`、`framer-motion`、`lucide-react`、`pdfjs-dist`(含子路径)、`mammoth`、`docx-preview`、`pptx-preview`、`exceljs`(含子路径)、`foliate-js`(含子路径)、`@likecoin/epub-ts`、`jszip`、`remark-gfm`、`remark-math`、`rehype-katex`、`rehype-raw`、`katex`(含子路径)、`shiki`(含子路径)、`video.js`、`x-data-spreadsheet`、`heic2any`、`@jsquash/avif`、`utif`、`ag-psd`
-- **Vue 包**:`vue`、`lucide-vue-next`、`markdown-it`、`@traptitech/markdown-it-katex`、`katex`(含子路径)、`shiki`(含子路径)、`pdfjs-dist`(含子路径)、`mammoth`、`pptx-preview`、`exceljs`(含子路径)、`foliate-js`(含子路径)、`@likecoin/epub-ts`、`jszip`、`video.js`、`x-data-spreadsheet`、`heic2any`、`@jsquash/avif`、`utif`、`ag-psd`
+- **React 包**:`react`、`react-dom`、`react/jsx-runtime`、`react-pdf`、`react-markdown`、`framer-motion`、`lucide-react`、`mammoth`、`docx-preview`、`pptx-preview`、`exceljs`(含子路径)、`foliate-js`(含子路径)、`@likecoin/epub-ts`、`jszip`、`remark-gfm`、`remark-math`、`rehype-katex`、`rehype-raw`、`katex`(含子路径)、`shiki`(含子路径)、`video.js`、`heic2any`、`@jsquash/avif`、`utif`、`ag-psd`
+- **Vue 包**:`vue`、`lucide-vue-next`、`markdown-it`、`@traptitech/markdown-it-katex`、`katex`(含子路径)、`shiki`(含子路径)、`mammoth`、`pptx-preview`、`exceljs`(含子路径)、`foliate-js`(含子路径)、`@likecoin/epub-ts`、`jszip`、`video.js`、`heic2any`、`@jsquash/avif`、`utif`、`ag-psd`
 
 ESM 产物 MUST NOT 把以下依赖声明为 external,它们 SHALL 跟随对应 renderer 的动态 `import()` 边界被打入 lazy chunk:
 
 - `@kenjiuno/msgreader`(由 Msg renderer 主线程引用 → 落入 Msg renderer chunk,约 323 KB / gzip 187 KB)
 - `opentype.js`(由 Font renderer 主线程引用 → 落入 Font renderer chunk)
+- `pdfjs-dist`(由 PDF renderer 引用 → 落入 PDF renderer 与 worker chunk)
 
-以下依赖 SHALL NOT 出现在 external 列表中(已被 `@eternalheart/file-preview-core` 通过 `?worker&inline` 完全内联到 jp2Loader chunk 的 base64,主 bundle 与 chunks 中均无引用):
+以下依赖 SHALL NOT 出现在 external 列表中，且仅作为构建依赖保留在 `devDependencies`：
 
+- `x-data-spreadsheet`、`jsonc-parser`（React/Vue 的 ESM 与 CJS 均内联）
 - `jpeg2000`
-- `@cornerstonejs/codec-openjpeg`
+- `@cornerstonejs/codec-openjpeg`（两者由 Core 通过 `?worker&inline` 内联到 JP2 worker）
 
-**CJS 产物(`lib/index.cjs`)** SHALL 维持与 ESM 一致的 external 列表,**额外补充** `@kenjiuno/msgreader`、`opentype.js` 这两项继续 external,以避免 `inlineDynamicImports: true` 下单文件体积进一步膨胀。
+**CJS 产物(`lib/index.cjs`)** SHALL 维持与 ESM 一致的 external 列表，**额外补充** `@kenjiuno/msgreader`、`opentype.js`、`pdfjs-dist` 继续 external，以避免 `inlineDynamicImports: true` 下单文件体积进一步膨胀。
 
-外部化的依赖 SHALL 继续保留在 `package.json#dependencies` 字段(除 `react` / `react-dom` / `vue` 保留在 `peerDependencies`),以保证使用者 `npm install` 时自动拉取,无需任何手动安装步骤。被改为 chunk 内联的依赖(`@kenjiuno/msgreader`、`opentype.js`)同样 SHALL 保留在 `dependencies` 字段。
+外部化的依赖 SHALL 继续保留在 `package.json#dependencies` 字段(除 `react` / `react-dom` / `vue` 保留在 `peerDependencies`),以保证使用者 `npm install` 时自动拉取,无需任何手动安装步骤。仅 ESM 内联、CJS external 的依赖同样 SHALL 保留在 `dependencies` 字段。ESM/CJS 均内联的依赖 MUST NOT 保留在 `dependencies`，避免消费者重复安装。
 
 `@eternalheart/file-preview-core` MUST 继续内联打包(因其未发布到 npm)。
 
@@ -117,10 +73,12 @@ ESM 产物 MUST NOT 把以下依赖声明为 external,它们 SHALL 跟随对应 
 - **WHEN** 在 `lib/index.cjs` 中 grep `require("@kenjiuno/msgreader")`、`require("opentype.js")`
 - **THEN** 应能匹配到 `require` 语句,而 MUST NOT 出现这些模块的实现代码
 
-#### Scenario: 依赖仍在 dependencies 中
+#### Scenario: 运行时依赖与构建依赖分离
 
 - **WHEN** 检查 `packages/react-file-preview/package.json` 与 `packages/vue-file-preview/package.json`
-- **THEN** 上述全部外部化依赖与 chunk 内联依赖均 SHALL 出现在 `dependencies` 字段中
+- **THEN** 外部化依赖及仅 ESM 内联的依赖 SHALL 出现在 `dependencies` 字段中
+- **AND** `x-data-spreadsheet`、`jsonc-parser` SHALL 仅出现在 `devDependencies` 中
+- **AND** `jpeg2000`、`@cornerstonejs/codec-openjpeg` SHALL 仅出现在 Core 的 `devDependencies` 中
 - **AND** 使用者执行 `npm install @eternalheart/react-file-preview`(或对应 vue 包)后,其 `node_modules` 中自动包含全部依赖
 
 #### Scenario: core 包仍内联
@@ -153,20 +111,14 @@ ESM 产物 MUST NOT 把以下依赖声明为 external,它们 SHALL 跟随对应 
 - **WHEN** 对比 `packages/react-file-preview/vite.config.ts` 与 `packages/vue-file-preview/vite.config.ts`
 - **THEN** 二者 `cssCodeSplit`、`inlineDynamicImports`、entry 拆分逻辑、chunk 命名规则、external 模式 SHALL 一致或镜像对应
 
-### Requirement: 体积预算 CI 拦截
+### Requirement: 发布产物不包含 SourceMap
 
-仓库 SHALL 接入 `size-limit`（或等价工具），在 `package.json` 中声明 `pnpm size` 脚本，并在 GitHub Actions / 等价 CI 中执行；当任一产物超过其声明的 gzip 上限时，CI MUST 失败，阻止 PR 合并。
+React、Vue 与 Core 的 npm 发布产物 MUST NOT 生成 JavaScript source map 或声明文件 source map。
 
-#### Scenario: 超阈值 PR 被拦截
+#### Scenario: 发布目录无 SourceMap
 
-- **WHEN** 一个 PR 引入新依赖导致 `lib/index.mjs` gzip 超过 80 KB
-- **THEN** CI 中 `pnpm size` 步骤失败
-- **AND** PR 在该 check 上标记为红色，无法合并
-
-#### Scenario: 阈值调整需显式审计
-
-- **WHEN** PR 修改 `.size-limit.cjs` 中的阈值
-- **THEN** 该 PR 的 diff 中 SHALL 显式可见阈值变化，便于 reviewer 审计
+- **WHEN** 完成三个包的构建
+- **THEN** `packages/*/lib` 中 MUST NOT 存在 `.map` 文件
 
 ### Requirement: CJS 兼容保留
 

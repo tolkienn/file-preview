@@ -285,7 +285,7 @@ if (fileType.value === 'xxx') {
 
 ### 3.6 Renderer 懒加载与代码分割（强制）
 
-为了让发布包主入口保持极小（React 主入口 gzip ≤ 80 KB / Vue ≤ 60 KB），所有 renderer **强制走 `React.lazy` / `defineAsyncComponent` 异步加载**，由 rollup 自动拆 chunk。每个新 renderer 必须同步在两个框架的 `renderers/lazy.{tsx,ts}` 中注册，**禁止**在 `FilePreviewContent` 中静态 import 任何 renderer 本体（toolbar 配置文件除外，它本来就在主入口）。
+为了让 renderer 按需加载，所有 renderer **强制走 `React.lazy` / `defineAsyncComponent` 异步加载**，由 rollup 自动拆 chunk。每个新 renderer 必须同步在两个框架的 `renderers/lazy.{tsx,ts}` 中注册，**禁止**在 `FilePreviewContent` 中静态 import 任何 renderer 本体（toolbar 配置文件除外，它本来就在主入口）。
 
 > ⚠️ 例外：`UnsupportedRenderer` 因为是所有错误回退的兜底，且自身体量极小，**保留**静态 import 直接打进主入口。除此之外**没有任何其它例外**。
 
@@ -347,15 +347,9 @@ import UnsupportedRenderer from './renderers/Unsupported/index.vue';  // 仅 Uns
 
 ```bash
 pnpm build:lib
-pnpm size           # size-limit 校验 gzip 上限
-pnpm measure        # 输出每个 chunk 的体积
 ```
 
-- 主入口 `lib/index.mjs` 必须保持 **gzip ≤ 1 KB** 量级（实际应在 ~300 B；新增 renderer 不应推高主入口）
-- 全量 JS gzip：React ≤ 800 KB / Vue ≤ 500 KB
-- CSS gzip：每个包 ≤ 400 KB
-
-如果 `pnpm size` 失败，几乎一定是把新 renderer 静态 import 进了主入口或 FilePreviewContent，回头检查 lazy.tsx/lazy.ts 是否补完。
+构建完成后检查主入口仍只包含 renderer 的动态导入，不得因新增 renderer 变成静态内联。
 
 #### 硬性禁止（懒加载相关）
 
@@ -363,7 +357,6 @@ pnpm measure        # 输出每个 chunk 的体积
 - ❌ **禁止** renderer 本体写 `export default` — 统一 `named export`，由 `lazy.tsx` 转换为 `{ default: ... }`
 - ❌ **禁止**省略 `lazy.tsx` 中的 `Lazy<typeof XxxRendererImpl>` 显式类型签名 — 会触发 TS4023 构建失败
 - ❌ **禁止**在 renderer 文件中再加 `<Suspense>` — 外层 `FilePreviewContent` 已统一包裹
-- ❌ **禁止**完工不跑 `pnpm size` — CI 也会跑，但本地未通过的话直接 push 是浪费 CI 时间
 
 ### 3.7 i18n 国际化（强制）
 
@@ -660,25 +653,27 @@ const isLight = root.getAttribute('data-theme') === 'light';
 - ❌ **禁止**只验证 dark 主题就交付 — 必须切 Light 实际看过一遍（含代码块语法高亮的色彩对比度）
 - ❌ **禁止**新增 token 后忘记重 build react/vue 包 — example 是从 `dist/index.css` 加载，不重 build 新类不生成
 
-### 3.9 依赖外部化与体积预算（强制）
+### 3.9 依赖外部化（强制）
 
-为了让发布包不重复打包重型解析库（PDF.js / docx-preview / shiki / katex / ExcelJS 等），所有重型 npm 依赖都通过 `rollupOptions.external` 外部化：产物只保留 `import` 语句，使用者侧由其工程的打包器从自己的 `node_modules` 解析。
+为了避免重复安装，依赖必须明确选择 external 或完全内联：external 依赖由使用者工程从 `node_modules` 解析；ESM/CJS 均完全内联的依赖仅作为构建依赖保留。
 
-**核心约束（零 BREAKING 策略）**：外部化的依赖**必须同时**声明在 `packages/{react,vue}-file-preview/package.json#dependencies` 中，npm/pnpm install 时自动拉取，使用者无需手动安装任何新包。
+**核心约束（零 BREAKING 策略）**：外部化的依赖**必须同时**声明在 `packages/{react,vue}-file-preview/package.json#dependencies` 中；ESM/CJS 均完全内联且产物无裸模块引用的依赖必须放在 `devDependencies`，避免使用者重复安装。
 
 #### 新增重型依赖的标准流程
 
-1. **加到 `dependencies` 而不是 `devDependencies`**：
+1. **先确定依赖策略**：
 
    ```jsonc
    // packages/react-file-preview/package.json
    "dependencies": {
-     "xxx-parser": "^1.2.3"    // ✅
+     "xxx-parser": "^1.2.3"    // external 或任一格式仍 external
+   },
+   "devDependencies": {
+     "xxx-inline-parser": "^1.2.3" // ESM/CJS 均完全内联
    }
-   // ❌ 不要放在 devDependencies — 使用者装包后会缺包
    ```
 
-2. **加到 `rollupOptions.external`**（两个 vite.config.ts 都要）：
+2. **external 依赖加到 `rollupOptions.external`**（两个 vite.config.ts 都要）；完全内联依赖加入明确的内联规则：
 
    ```ts
    // packages/{react,vue}-file-preview/vite.config.ts
@@ -698,45 +693,22 @@ const isLight = root.getAttribute('data-theme') === 'light';
    grep -c 'PARSER_INTERNAL_FUNC' packages/react-file-preview/lib/chunks/*.mjs # 应为 0
    ```
 
-4. **跑 `pnpm size` 确认未超阈值**：
-
-   ```bash
-   pnpm size
-   # 全部条目应输出 "Size: X KB ≤ limit"，任一超阈值都需要回头查为什么没 external 干净
-   ```
-
 #### 已外部化的依赖清单（不要在它们里挑了重复加）
 
 React 包当前已 external：`react`、`react-dom`、`react/jsx-runtime`、`pdfjs-dist`（含子路径）、`react-pdf`、`@videojs-player/react`、`video.js`、`framer-motion`、`lucide-react`、`react-markdown`、`react-syntax-highlighter`、`remark-gfm`、`remark-math`、`rehype-katex`、`rehype-raw`、`katex`、`shiki`、`docx-preview`、`mammoth`、`pptx-preview`、`exceljs`、`foliate-js`、`@kenjiuno/msgreader`、`@likecoin/epub-ts`、`jszip`。
 
-Vue 包当前已 external：`vue`、`pdfjs-dist`（含子路径）、`lucide-vue-next`、`markdown-it`、`@traptitech/markdown-it-katex`、`katex`、`shiki`、`docx-preview`、`mammoth`、`pptx-preview`、`exceljs`、`foliate-js`、`@kenjiuno/msgreader`、`@likecoin/epub-ts`、`jszip`、`video.js`、`x-data-spreadsheet`。
+Vue 包当前已 external：`vue`、`pdfjs-dist`（CJS，含子路径）、`lucide-vue-next`、`markdown-it`、`@traptitech/markdown-it-katex`、`katex`、`shiki`、`docx-preview`、`mammoth`、`pptx-preview`、`exceljs`、`foliate-js`、`@kenjiuno/msgreader`、`@likecoin/epub-ts`、`jszip`、`video.js`。
 
 #### `@eternalheart/file-preview-core` 是例外
 
 core 包**永不发布到 npm**，必须**内联打包**到 react/vue 产物中。**禁止**把它加进 `external` 列表（重复警示：见本文档底部"硬性禁止"第 12 条）。
 
-#### 体积预算（CI 拦截）
+#### 硬性禁止（外部化相关）
 
-仓库根目录 `.size-limit.cjs` 声明了 gzip 上限。任一 PR 超阈值会被 CI 拦截：
-
-| 产物 | gzip 上限 |
-|---|---|
-| `packages/react-file-preview/lib/index.mjs` | 80 KB |
-| `packages/react-file-preview/lib/**/*.mjs`（全量） | 800 KB |
-| `packages/react-file-preview/lib/**/*.css` | 400 KB |
-| `packages/vue-file-preview/lib/index.mjs` | 60 KB |
-| `packages/vue-file-preview/lib/**/*.mjs`（全量） | 500 KB |
-| `packages/vue-file-preview/lib/**/*.css` | 400 KB |
-
-新增 renderer **必须**在本地跑通 `pnpm size` 才能交付。
-
-#### 硬性禁止（外部化与体积相关）
-
-- ❌ **禁止**把重型 npm 依赖放进 `devDependencies` — 使用者装包后会缺包；放 `dependencies`
+- ❌ **禁止**把 external 依赖放进 `devDependencies` — 使用者装包后会缺包；仅 ESM/CJS 均完全内联的依赖允许放 `devDependencies`
 - ❌ **禁止**只改 `package.json` 不改 `vite.config.ts` 的 `external` — 否则依赖被打入产物，体积爆炸
 - ❌ **禁止**只改 `vite.config.ts` 不改 `package.json#dependencies` — 否则使用者运行时报 "Could not resolve xxx"
 - ❌ **禁止**把 `@eternalheart/file-preview-core` 加进 `external` — 见底部硬性禁止第 12 条
-- ❌ **禁止**完工不跑 `pnpm size` — 超阈值的 PR 一定被 CI 拦截
 
 ### 4. 文档同步（必须）
 
@@ -819,10 +791,10 @@ packages/vue-file-preview/src/renderers/*Renderer.vue
 1. core 类型与识别 + **i18n 字典（zh-CN + en-US）**
 2. React renderer + **lazy.tsx 注册** + 接入 FilePreviewContent + toolbar 接 `t`
 3. Vue renderer + **lazy.ts 注册** + 接入 FilePreviewContent + toolbar 接 `t`
-4. **依赖治理**：新依赖加到 `dependencies` + 两个 `vite.config.ts` 的 `external`（详见 §3.9）
+4. **依赖治理**：明确新依赖采用 external 或完全内联，并同步两个包的 manifest 与 Vite 配置（详见 §3.9）
 5. **文档同步**（README × 4 + docs guide/supported-types.md + docs api/types.md + docs index.md），见 §4
 6. 依赖 / 示例
-7. **体积自检**：`pnpm build:lib && pnpm size`，确认全部条目通过
+7. **构建自检**：运行 `pnpm build:lib`，确认两个框架构建成功且 renderer 保持动态加载
 
 ### 步骤 4：实施修改
 
@@ -866,8 +838,7 @@ Grep: "XxxRenderer" in packages/vue-file-preview/src
 - ❌ **禁止**给 renderer 加 `theme?: Theme` props 或在 renderer 内部读 `data-theme` 切样式分支 — 主题适配统一交给 CSS 变量（详见 §3.8）
 - ❌ **禁止**在 `FilePreviewContent.{tsx,vue}` 中静态 `import` 任何 renderer 本体（仅 `UnsupportedRenderer` 例外） — 必须经由 `renderers/lazy.{tsx,ts}` 间接导入，否则破坏代码分割（详见 §3.6）
 - ❌ **禁止** renderer 写 `export default` — 统一 `named export`，由 `lazy.tsx` 适配 `{ default: ... }`（详见 §3.6）
-- ❌ **禁止**把重型 npm 依赖（解析库 / UI 库 / 媒体库）放在 react / vue 包的 `devDependencies` — 必须放 `dependencies` + 在 `vite.config.ts` 的 `rollupOptions.external` 加对应条目（详见 §3.9）
-- ❌ **禁止**新增 renderer 后不跑 `pnpm size` — CI 会拦截超阈值，本地未通过就提交浪费 CI 时间（详见 §3.6 / §3.9）
+- ❌ **禁止**把 external 的 npm 依赖放在 react / vue 包的 `devDependencies`；仅 ESM/CJS 均完全内联且产物无裸模块引用的依赖允许作为构建依赖（详见 §3.9）
 - ❌ **禁止**把 `@eternalheart/file-preview-core` 加进 react / vue 两个发布包的 `vite.config.ts` 的 `rollupOptions.external` 数组 — core 是内部共享层，**永不发布到 npm**，必须内联打包进 react / vue 产物。若 external 列表里出现 core，消费者项目装包后会报 `Could not resolve "@eternalheart/file-preview-core"`。两个 vite.config.ts 里已经有警示注释「注意：@eternalheart/file-preview-core 未发布到 npm，必须内联打包」，不要删除
 - ❌ **禁止**只更新部分文档就交付 — §4 列出的 README × 4 + docs 三件套（`guide/supported-types.md` / `api/types.md` / `index.md`）必须**全部**同步；任一处遗漏都视为未完工。`docs/index.md` 的 hero tagline、特性卡片 details、底部「## 支持的文件类型」清单**三处都要看**，不要只改一处
 

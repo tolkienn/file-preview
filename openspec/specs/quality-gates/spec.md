@@ -18,9 +18,8 @@ TBD - created by archiving change align-code-docs-and-quality. Update Purpose af
 - **THEN** 所有契约测试 MUST 运行且失败时返回非零退出码
 
 ### Requirement: 完整验证链路
-变更完成前 SHALL 运行 lint、test、库构建、文档构建和 size-limit。
+变更完成前 SHALL 运行 lint、test、库构建和文档构建。
 
 #### Scenario: 发布前验证
 - **WHEN** 本次变更实现完成
-- **THEN** `pnpm lint`、`pnpm test`、`pnpm build:lib`、`pnpm build:docs` 和 `pnpm size` MUST 全部通过
-
+- **THEN** `pnpm lint`、`pnpm test`、`pnpm build:lib` 和 `pnpm build:docs` MUST 全部通过

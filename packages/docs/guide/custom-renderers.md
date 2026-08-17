@@ -486,10 +486,7 @@ export const CustomRenderer = defineAsyncComponent({
 });
 ```
 
-**体积影响：**
-- React 主入口：gzip ≤ 80 KB
-- Vue 主入口：gzip ≤ 60 KB
-- 每个渲染器：独立异步 chunk
+每个渲染器都会输出为独立异步 chunk，并仅在需要时加载。
 
 ### i18n 集成
 

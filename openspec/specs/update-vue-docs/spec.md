@@ -21,7 +21,7 @@ README.md 和 README.zh-CN.md 的「Custom Renderers」章节 SHALL 新增「Eve
 README.md 和 README.zh-CN.md 的「Custom Renderers」章节 SHALL 新增「Renderer Lazy Loading」子章节，说明：
 - `lazy.ts` 的注册流程
 - `defineAsyncComponent` + `RendererLoading` 的代码分割原理
-- 主入口体积控制目标（gzip ≤ 60 KB）
+- renderer 独立异步 chunk 与按需加载行为
 
 #### Scenario: 开发者理解懒加载必要性
 - **WHEN** 开发者需要新增自定义 renderer
@@ -73,4 +73,3 @@ Vue 双语 README SHALL 描述当前 1.x 已实现能力，不得把已发布 AP
 #### Scenario: Vue 文档 API 审查
 - **WHEN** 对照 Vue `src/index.ts` 和 README
 - **THEN** 文档导入、版本标签和 Worker 描述 MUST 与实现一致
-

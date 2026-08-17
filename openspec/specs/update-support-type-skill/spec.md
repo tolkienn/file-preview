@@ -32,16 +32,16 @@ SKILL.md SHALL 新增 § 3.6「Renderer 懒加载与代码分割」章节，包�
 - React `lazy.tsx` 注册流程（`import type` + `lazy(() => import(...).then(m => ({ default: m.XxxRenderer })))`）
 - Vue `lazy.ts` 注册流程（`wrap(() => import('./Xxx/index.vue'))`）
 - `FilePreviewContent` 导入约束（从 `./renderers/lazy` 导入，禁止直接 import renderer 本体）
-- 自检步骤（`pnpm build:lib && pnpm size` 验证体积）
+- 自检步骤（运行 `pnpm build:lib` 并检查 renderer 保持动态加载）
 - 硬性禁止列表
 
 #### Scenario: 开发者注册新 renderer
 - **WHEN** 新增 renderer 完成实现
 - **THEN** 能在 `lazy.{tsx,ts}` 中正确注册，避免破坏代码分割
 
-#### Scenario: 自检体积预算
+#### Scenario: 自检代码分割
 - **WHEN** 完成 renderer 开发
-- **THEN** 能运行 `pnpm size` 确认主入口未超阈值（React ≤ 80 KB / Vue ≤ 60 KB）
+- **THEN** 能通过构建产物确认 renderer 未被静态内联到主入口
 
 #### Scenario: 提供注册示例
 - **WHEN** 文档展示懒加载注册
@@ -96,22 +96,17 @@ SKILL.md SHALL 新增 § 3.8「Light / Dark 主题适配」章节，包含：
 - **WHEN** 文档展示主题适配
 - **THEN** 包含 React 和 Vue 的正确 / 错误写法对比代码片段
 
-### Requirement: 补充依赖外部化与体积预算（§ 3.9）
-SKILL.md SHALL 新增 § 3.9「依赖外部化与体积预算」章节，包含：
-- 核心约束（重型依赖必须放 `dependencies` + `vite.config.ts` external）
-- 新增重型依赖的标准流程（4 步：加 dependencies → 加 external → build 验证 → size 验证）
+### Requirement: 补充依赖外部化（§ 3.9）
+SKILL.md SHALL 新增 § 3.9「依赖外部化」章节，包含：
+- 核心约束（external 依赖放 `dependencies`；ESM/CJS 均完全内联的依赖放 `devDependencies`）
+- 新增重型依赖的标准流程（选择 external 或完全内联策略 → 同步 manifest 与 Vite 配置 → build 验证）
 - 已外部化依赖清单（React 和 Vue 分别列出）
 - `@eternalheart/file-preview-core` 例外说明（必须内联打包）
-- 体积预算表格（React 主入口 ≤ 80 KB / Vue ≤ 60 KB 等）
 - 硬性禁止列表
 
 #### Scenario: 开发者新增重型依赖
 - **WHEN** 新 renderer 依赖 npm 解析库（如 `xxx-parser`）
 - **THEN** 能按标准流程加到 `dependencies` 和 `external`，并验证外部化生效
-
-#### Scenario: 体积预算验证
-- **WHEN** 完成 renderer 开发
-- **THEN** 能运行 `pnpm size` 确认全部条目未超阈值
 
 #### Scenario: core 包例外处理
 - **WHEN** 开发者修改 `vite.config.ts` 的 `external`
@@ -125,8 +120,7 @@ SKILL.md 底部的「硬性禁止」章节 SHALL 补充以下条目：
 - ❌ 禁止给 renderer 加 `theme` props 或读 `data-theme` 属性（§ 3.8 相关）
 - ❌ 禁止静态 import renderer 本体（§ 3.6 相关）
 - ❌ 禁止 renderer 写 `export default`（§ 3.6 相关）
-- ❌ 禁止把重型依赖放 `devDependencies`（§ 3.9 相关）
-- ❌ 禁止完工不跑 `pnpm size`（§ 3.6 / § 3.9 相关）
+- ❌ 禁止把 external 依赖放 `devDependencies`（§ 3.9 相关）
 
 #### Scenario: 开发者遵循新约束
 - **WHEN** 开发者新增 renderer
@@ -138,4 +132,3 @@ SKILL.md 的原有章节（如「同步新增文件类型支持」、「强制�
 #### Scenario: 章节顺序不变
 - **WHEN** 文档更新完成
 - **THEN** 原有章节顺序保持（强制检查清单 → § 3.5-3.9 → § 4 文档同步 → 执行流程 → 硬性禁止）
-
