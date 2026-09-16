@@ -28,7 +28,7 @@ export const TextRenderer = forwardRef<RendererHandle, TextRendererProps>(({
   const [htmlPreview, setHtmlPreview] = useState(false);
 
   const language = getLanguageFromFileName(fileName);
-  const { lineHtmls } = useShikiHighlight(
+  const { lineHtmls, loading: highlightLoading } = useShikiHighlight(
     language !== 'text' ? content : '',
     language,
   );
@@ -123,7 +123,7 @@ export const TextRenderer = forwardRef<RendererHandle, TextRendererProps>(({
     },
   }), [getToolbarGroups]);
 
-  if (loading) {
+  if (loading || (language !== 'text' && highlightLoading)) {
     return (
       <div className="rfp-flex rfp-items-center rfp-justify-center rfp-w-full rfp-h-full">
         <div className="rfp-w-12 rfp-h-12 rfp-border-4 rfp-border-line-strong rfp-border-t-spinner-head rfp-rounded-full rfp-animate-spin" />

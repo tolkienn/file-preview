@@ -30,7 +30,7 @@ const error = ref<string | null>(null);
 
 const language = computed(() => getLanguageFromFileName(props.fileName));
 const codeForShiki = computed(() => (language.value !== 'text' ? content.value : ''));
-const { lineHtmls } = useShikiHighlight(codeForShiki, language);
+const { lineHtmls, loading: highlightLoading } = useShikiHighlight(codeForShiki, language);
 
 const isHtml = computed(() => language.value === 'html');
 
@@ -97,7 +97,7 @@ defineExpose<RendererHandle>({
 </script>
 
 <template>
-  <div v-if="loading" class="vfp-flex vfp-items-center vfp-justify-center vfp-w-full vfp-h-full">
+  <div v-if="loading || (language !== 'text' && highlightLoading)" class="vfp-flex vfp-items-center vfp-justify-center vfp-w-full vfp-h-full">
     <div
       class="vfp-w-12 vfp-h-12 vfp-border-4 vfp-border-line-strong vfp-border-t-spinner-head vfp-rounded-full vfp-animate-spin"
     />
