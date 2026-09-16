@@ -89,6 +89,7 @@ import { formatFileSize, getFileType, type ZipTreeNode } from '../../fp-core';
       padding-right: 0.5rem;
       text-align: left;
       font-size: 0.875rem;
+      min-height: 40px;
       background: transparent;
       border: 0;
       cursor: pointer;
@@ -104,7 +105,11 @@ import { formatFileSize, getFileType, type ZipTreeNode } from '../../fp-core';
     }
     .file-row.selected {
       background: var(--fp-line);
-      color: var(--fp-fg-inverse);
+      color: var(--fp-fg-primary);
+    }
+    .file-row.selected .afp-text-fg-tertiary,
+    .file-row.selected .afp-text-fg-disabled {
+      color: var(--fp-fg-secondary);
     }
   `],
 })

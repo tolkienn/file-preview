@@ -65,6 +65,7 @@ const previewLoading = ref(false);
 const previewError = ref<string | null>(null);
 const hoverTip = ref<HoverTipState | null>(null);
 const splitRef = ref<InstanceType<typeof ResizableSplit> | null>(null);
+const selectingPath = ref<string | null>(null);
 
 const revokeCurrent = () => {
   if (selected.value?.blobUrl) URL.revokeObjectURL(selected.value.blobUrl);
@@ -131,12 +132,14 @@ const handleToggle = (path: string) => {
 };
 
 const handleHover = (text: string, rect: DOMRect) => {
-  hoverTip.value = { text, x: rect.right + 8, y: rect.top + rect.height / 2 };
+  const maxX = typeof window !== 'undefined' ? window.innerWidth - 328 : rect.right + 8;
+  hoverTip.value = { text, x: Math.max(8, Math.min(rect.right + 8, maxX)), y: rect.top + rect.height / 2 };
 };
 const handleLeave = () => { hoverTip.value = null; };
 
 const handleSelect = async (node: ZipTreeNode) => {
-  if (!zip.value || node.isDir) return;
+  if (!zip.value || node.isDir || selected.value?.path === node.path || selectingPath.value === node.path) return;
+  selectingPath.value = node.path;
   revokeCurrent();
   previewLoading.value = true;
   previewError.value = null;
@@ -153,6 +156,7 @@ const handleSelect = async (node: ZipTreeNode) => {
     previewError.value = '条目读取失败';
   } finally {
     previewLoading.value = false;
+    if (selectingPath.value === node.path) selectingPath.value = null;
   }
 };
 
@@ -226,28 +230,29 @@ const previewFiles = computed(() => {
       <div
         v-if="hoverTip"
         class="vfp-zip-tip"
-        :style="{ left: hoverTip.x + 'px', top: hoverTip.y + 'px' }"
+        :style="{
+          position: 'fixed',
+          zIndex: 2147483647,
+          pointerEvents: 'none',
+          display: 'block',
+          transform: 'translateY(-50%)',
+          padding: '4px 8px',
+          background: 'rgba(0, 0, 0, 0.85)',
+          color: '#fff',
+          fontSize: '12px',
+          lineHeight: 1.5,
+          borderRadius: '4px',
+          whiteSpace: 'nowrap',
+          maxWidth: 'min(320px, calc(100vw - 16px))',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+          left: hoverTip.x + 'px',
+          top: hoverTip.y + 'px',
+        }"
       >
         {{ hoverTip.text }}
       </div>
     </Teleport>
   </template>
 </template>
-
-<style>
-/* 全局 tooltip（不能 scoped，因 Teleport 到 body） */
-.vfp-zip-tip {
-  position: fixed;
-  z-index: 9999;
-  pointer-events: none;
-  transform: translateY(-50%);
-  padding: 4px 8px;
-  background: rgba(0, 0, 0, 0.85);
-  color: #fff;
-  font-size: 12px;
-  line-height: 1.5;
-  border-radius: 4px;
-  white-space: nowrap;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
-</style>

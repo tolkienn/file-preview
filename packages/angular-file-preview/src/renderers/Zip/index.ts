@@ -59,16 +59,19 @@ function ensureZipTipStyles(): void {
   el.textContent = `
     .afp-zip-tip {
       position: fixed;
-      z-index: 9999;
+      z-index: 2147483647 !important;
       pointer-events: none;
       transform: translateY(-50%);
       padding: 4px 8px;
       background: rgba(0, 0, 0, 0.85);
-      color: var(--fp-fg-inverse, #fff);
+      color: var(--fp-fg-primary, #fff);
       font-size: 12px;
       line-height: 1.5;
       border-radius: 4px;
       white-space: nowrap;
+      max-width: min(320px, calc(100vw - 16px));
+      overflow: hidden;
+      text-overflow: ellipsis;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     }
   `;
@@ -157,6 +160,7 @@ export class ZipRenderer implements RendererHandle {
   readonly previewLoading = signal(false);
   readonly previewError = signal<string | null>(null);
   readonly hoverTip = signal<HoverTipState | null>(null);
+  private selectingPath: string | null = null;
 
   readonly totalStats = computed<ZipToolbarStats | null>(() => {
     const root = this.tree();
@@ -215,7 +219,8 @@ export class ZipRenderer implements RendererHandle {
   }
 
   handleHover(payload: { text: string; rect: DOMRect }): void {
-    this.hoverTip.set({ text: payload.text, x: payload.rect.right + 8, y: payload.rect.top + payload.rect.height / 2 });
+    const maxX = typeof window !== 'undefined' ? window.innerWidth - 328 : payload.rect.right + 8;
+    this.hoverTip.set({ text: payload.text, x: Math.max(8, Math.min(payload.rect.right + 8, maxX)), y: payload.rect.top + payload.rect.height / 2 });
   }
 
   handleLeave(): void {
@@ -224,7 +229,8 @@ export class ZipRenderer implements RendererHandle {
 
   async handleSelect(node: ZipTreeNode): Promise<void> {
     const z = this.zip();
-    if (!z || node.isDir) return;
+    if (!z || node.isDir || this.selected()?.path === node.path || this.selectingPath === node.path) return;
+    this.selectingPath = node.path;
     this.revokeCurrent();
     this.previewLoading.set(true);
     this.previewError.set(null);
@@ -240,6 +246,7 @@ export class ZipRenderer implements RendererHandle {
       this.previewError.set('条目读取失败');
     } finally {
       this.previewLoading.set(false);
+      if (this.selectingPath === node.path) this.selectingPath = null;
     }
   }
 
@@ -257,11 +264,16 @@ export class ZipRenderer implements RendererHandle {
     if (!this.tipEl) {
       this.tipEl = document.createElement('div');
       this.tipEl.className = 'afp-zip-tip';
+      this.tipEl.style.position = 'fixed';
+      this.tipEl.style.setProperty('z-index', '2147483647', 'important');
+      this.tipEl.style.pointerEvents = 'none';
+      this.tipEl.style.transform = 'translateY(-50%)';
+      this.tipEl.style.display = 'block';
       document.body.appendChild(this.tipEl);
     }
-    this.tipEl.textContent = tip.text;
     this.tipEl.style.left = `${tip.x}px`;
     this.tipEl.style.top = `${tip.y}px`;
+    this.tipEl.textContent = tip.text;
   }
 
   private async load(): Promise<void> {

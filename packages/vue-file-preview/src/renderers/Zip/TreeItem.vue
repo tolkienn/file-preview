@@ -116,6 +116,7 @@ export default { name: 'ZipTreeItem' };
   background: transparent;
   border: 0;
   cursor: pointer;
+  min-height: 40px;
 }
 .dir-row {
   color: var(--fp-fg-secondary);
@@ -128,6 +129,10 @@ export default { name: 'ZipTreeItem' };
 }
 .file-row.selected {
   background: var(--fp-line);
-  color: #fff;
+  color: var(--fp-fg-primary);
+}
+.file-row.selected .vfp-text-fg-tertiary,
+.file-row.selected .vfp-text-fg-disabled {
+  color: var(--fp-fg-secondary);
 }
 </style>

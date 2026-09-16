@@ -110,7 +110,7 @@ const TreeItem: React.FC<TreeItemProps> = ({
           onClick={() => onToggle(node.path)}
           onMouseEnter={handleEnter}
           onMouseLeave={onLeave}
-          className="rfp-w-full rfp-flex rfp-items-center rfp-gap-1.5 rfp-py-1.5 rfp-pr-2 rfp-text-left rfp-text-fg-secondary hover:rfp-bg-surface-1 rfp-text-sm"
+          className="rfp-zip-tree-row rfp-w-full rfp-flex rfp-items-center rfp-gap-1.5 rfp-py-1.5 rfp-pr-2 rfp-text-left rfp-text-fg-secondary hover:rfp-bg-surface-1 rfp-text-sm"
           style={pad}
         >
           <ChevronRight
@@ -151,8 +151,8 @@ const TreeItem: React.FC<TreeItemProps> = ({
       onClick={() => onSelect(node)}
       onMouseEnter={handleEnter}
       onMouseLeave={onLeave}
-      className={`rfp-w-full rfp-flex rfp-items-center rfp-gap-1.5 rfp-py-1.5 rfp-pr-2 rfp-text-left rfp-text-sm ${
-        isSelected ? 'rfp-bg-surface-2 rfp-text-fg-primary' : 'rfp-text-fg-secondary hover:rfp-bg-surface-1'
+      className={`rfp-zip-tree-row rfp-w-full rfp-flex rfp-items-center rfp-gap-1.5 rfp-py-1.5 rfp-pr-2 rfp-text-left rfp-text-sm ${
+        isSelected ? 'rfp-zip-file-row-selected' : 'rfp-text-fg-secondary hover:rfp-bg-surface-1'
       }`}
       style={pad}
     >
@@ -182,6 +182,7 @@ export const ZipRenderer = forwardRef<RendererHandle, ZipRendererProps>(({ url, 
   const [hoverTip, setHoverTip] = useState<HoverTipState | null>(null);
   const onStatsChangeRef = useRef(onStatsChange);
   const splitRef = useRef<ResizableSplitHandle>(null);
+  const selectingPathRef = useRef<string | null>(null);
 
   useEffect(() => {
     onStatsChangeRef.current = onStatsChange;
@@ -266,9 +267,10 @@ export const ZipRenderer = forwardRef<RendererHandle, ZipRendererProps>(({ url, 
   }, []);
 
   const handleHover = useCallback((text: string, rect: DOMRect) => {
+    const maxX = typeof window !== 'undefined' ? window.innerWidth - 328 : rect.right + 8;
     setHoverTip({
       text,
-      x: rect.right + 8,
+      x: Math.max(8, Math.min(rect.right + 8, maxX)),
       y: rect.top + rect.height / 2,
     });
   }, []);
@@ -279,7 +281,8 @@ export const ZipRenderer = forwardRef<RendererHandle, ZipRendererProps>(({ url, 
 
   const handleSelect = useCallback(
     async (node: ZipTreeNode) => {
-      if (!zip || node.isDir) return;
+      if (!zip || node.isDir || selected?.path === node.path || selectingPathRef.current === node.path) return;
+      selectingPathRef.current = node.path;
       if (selected?.blobUrl) URL.revokeObjectURL(selected.blobUrl);
       setPreviewLoading(true);
       setPreviewError(null);
@@ -296,6 +299,7 @@ export const ZipRenderer = forwardRef<RendererHandle, ZipRendererProps>(({ url, 
         setPreviewError('条目读取失败');
       } finally {
         setPreviewLoading(false);
+        if (selectingPathRef.current === node.path) selectingPathRef.current = null;
       }
     },
     [zip, selected]
@@ -403,8 +407,21 @@ export const ZipRenderer = forwardRef<RendererHandle, ZipRendererProps>(({ url, 
         typeof document !== 'undefined' &&
         createPortal(
           <div
-            className="rfp-fixed rfp-z-[9999] rfp-pointer-events-none rfp-px-2 rfp-py-1 rfp-bg-[rgba(0,0,0,0.85)] rfp-text-fg-primary rfp-text-xs rfp-rounded rfp-whitespace-nowrap rfp-shadow-lg"
+            className="rfp-zip-tip"
             style={{
+              position: 'fixed',
+              zIndex: 2147483647,
+              pointerEvents: 'none',
+              padding: '4px 8px',
+              background: 'rgba(0, 0, 0, 0.85)',
+              color: '#fff',
+              fontSize: '12px',
+              lineHeight: 1.5,
+              borderRadius: '4px',
+              whiteSpace: 'nowrap',
+              maxWidth: 'min(320px, calc(100vw - 16px))',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
               left: `${hoverTip.x}px`,
               top: `${hoverTip.y}px`,
               transform: 'translateY(-50%)',

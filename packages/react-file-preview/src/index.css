@@ -1053,6 +1053,21 @@
   padding-top: 1.5rem;
 }
 
+/* ZIP 文件树选中态：与 Vue / Angular 保持一致 */
+.rfp-root .rfp-zip-file-row-selected {
+  background: var(--fp-line);
+  color: var(--fp-fg-primary);
+}
+
+.rfp-root .rfp-zip-file-row-selected .rfp-text-fg-tertiary,
+.rfp-root .rfp-zip-file-row-selected .rfp-text-fg-disabled {
+  color: var(--fp-fg-secondary);
+}
+
+.rfp-root .rfp-zip-tree-row {
+  min-height: 40px;
+}
+
 /* ============================================================
  * 文档类渲染器容器响应式 padding（Docx、PDF）
  * 宽屏时正常 padding (1.5rem)，挤压时逐渐减小至 0
