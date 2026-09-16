@@ -33,7 +33,7 @@ import { createSystemDarkSignal, resolveTheme } from './di/theme-mode';
     @if (isOpen()) {
       <div class="afp-root" [attr.data-theme]="resolvedTheme()">
         <div
-          class="afp-fixed afp-inset-0 afp-z-[9999] afp-flex afp-items-center afp-justify-center afp-backdrop-blur-md afp-overflow-hidden afp-bg-surface-overlay afp-fade-in"
+          class="afp-fixed afp-inset-0 afp-z-[9999] afp-flex afp-items-center afp-justify-center afp-backdrop-blur-md afp-overflow-hidden afp-bg-surface-overlay"
           (click)="close.emit()"
           (wheel)="$event.stopPropagation()"
         >
@@ -66,11 +66,6 @@ import { createSystemDarkSignal, resolveTheme } from './di/theme-mode';
   `,
   styles: [`
     :host { display: contents; }
-    .afp-fade-in { animation: afp-modal-fade 0.2s ease; }
-    @keyframes afp-modal-fade {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
   `],
 })
 export class FilePreviewModal {

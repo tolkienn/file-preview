@@ -11,7 +11,7 @@ import { ToolbarButton } from './toolbar-button';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div
-      class="afp-flex-shrink-0 afp-z-10 afp-backdrop-blur-md afp-border-b afp-bg-surface-toolbar afp-border-line"
+      class="afp-relative afp-flex-shrink-0 afp-z-30 afp-backdrop-blur-md afp-border-b afp-bg-surface-toolbar afp-border-line"
       style="padding-top: env(safe-area-inset-top, 0px)"
     >
       <div class="afp-flex afp-items-center afp-justify-between afp-px-3 md:afp-px-5 afp-py-1.5 md:afp-py-2.5">

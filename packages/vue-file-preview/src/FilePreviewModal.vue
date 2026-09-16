@@ -108,8 +108,7 @@ const handleWheel = (e: WheelEvent) => e.stopPropagation();
 
 <template>
   <Teleport to="body">
-    <Transition name="vfp-fade">
-      <div v-if="isOpen" class="vfp-root" :data-theme="resolvedTheme">
+    <div v-if="isOpen" class="vfp-root" :data-theme="resolvedTheme">
         <div
           class="vfp-fixed vfp-inset-0 vfp-z-[9999] vfp-flex vfp-items-center vfp-justify-center vfp-backdrop-blur-md vfp-overflow-hidden vfp-bg-surface-overlay"
           @click="handleBackdropClick"
@@ -140,7 +139,6 @@ const handleWheel = (e: WheelEvent) => e.stopPropagation();
             />
           </div>
         </div>
-      </div>
-    </Transition>
+    </div>
   </Teleport>
 </template>

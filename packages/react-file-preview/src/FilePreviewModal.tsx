@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import { PreviewFileInput, CustomRenderer } from './types';
 import { FilePreviewContent } from './FilePreviewContent';
 import type { Locale, Messages, Theme, CustomRendererEventPayload, PreviewFile, RequestHandler, RequestInitFactory, ShouldFetchAsBlob } from '@eternalheart/file-preview-core';
@@ -101,45 +100,38 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
 
   const modalContent = (
     <div className="rfp-root" data-theme={resolvedTheme}>
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="rfp-fixed rfp-inset-0 rfp-z-[9999] rfp-flex rfp-items-center rfp-justify-center rfp-backdrop-blur-md rfp-overflow-hidden rfp-bg-surface-overlay"
-            onClick={onClose}
-            onWheel={(e) => e.stopPropagation()}
-          >
-            <div
-              className="rfp-relative rfp-w-full rfp-h-full"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <FilePreviewContent
-                mode="modal"
-                files={files}
-                currentIndex={currentIndex}
-                onClose={onClose}
-                onNavigate={onNavigate}
-                customRenderers={customRenderers}
-                locale={locale}
-                messages={messages}
-                headless={headless}
-                theme={theme}
-                onCustomEvent={onCustomEvent}
-                requestInit={requestInit}
-                requestHandler={requestHandler}
-                shouldFetchAsBlob={shouldFetchAsBlob}
-                onDownload={onDownload}
-                showClose={showClose}
-                showDownload={showDownload}
-                showNavigation={showNavigation}
-                loopNavigation={loopNavigation}
-              />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <div
+        className="rfp-fixed rfp-inset-0 rfp-z-[9999] rfp-flex rfp-items-center rfp-justify-center rfp-backdrop-blur-md rfp-overflow-hidden rfp-bg-surface-overlay"
+        onClick={onClose}
+        onWheel={(e) => e.stopPropagation()}
+      >
+        <div
+          className="rfp-relative rfp-w-full rfp-h-full"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <FilePreviewContent
+            mode="modal"
+            files={files}
+            currentIndex={currentIndex}
+            onClose={onClose}
+            onNavigate={onNavigate}
+            customRenderers={customRenderers}
+            locale={locale}
+            messages={messages}
+            headless={headless}
+            theme={theme}
+            onCustomEvent={onCustomEvent}
+            requestInit={requestInit}
+            requestHandler={requestHandler}
+            shouldFetchAsBlob={shouldFetchAsBlob}
+            onDownload={onDownload}
+            showClose={showClose}
+            showDownload={showDownload}
+            showNavigation={showNavigation}
+            loopNavigation={loopNavigation}
+          />
+        </div>
+      </div>
     </div>
   );
 
