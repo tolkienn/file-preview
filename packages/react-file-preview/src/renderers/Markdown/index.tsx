@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, forwardRef, useImperativeHandle, useRef } from 'react';
-import ReactMarkdown from 'react-markdown';
+import { useState, useEffect, useCallback, forwardRef, useImperativeHandle, useRef, memo } from 'react';
+import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
@@ -17,6 +17,9 @@ import 'katex/dist/katex.min.css';
 interface MarkdownRendererProps {
   url: string;
 }
+
+const markdownRemarkPlugins = [remarkGfm, remarkMath];
+const markdownRehypePlugins = [rehypeRaw, rehypeKatex];
 
 const useCopy = (text: string) => {
   const [copied, setCopied] = useState(false);
@@ -38,7 +41,7 @@ const useCopy = (text: string) => {
 };
 
 /** 内联版复制按钮：放在代码块 header 行内，始终可见 */
-const InlineCopyButton = ({ text }: { text: string }) => {
+const InlineCopyButton = memo(({ text }: { text: string }) => {
   const t = useTranslator();
   const { copied, handleCopy } = useCopy(text);
   return (
@@ -50,10 +53,10 @@ const InlineCopyButton = ({ text }: { text: string }) => {
       {copied ? <Check size={13} /> : <Copy size={13} />}
     </button>
   );
-};
+});
 
 /** 浮动版复制按钮：无 header 时绝对定位于代码块右上角（hover 显示） */
-const FloatingCopyButton = ({ text }: { text: string }) => {
+const FloatingCopyButton = memo(({ text }: { text: string }) => {
   const t = useTranslator();
   const { copied, handleCopy } = useCopy(text);
   return (
@@ -65,10 +68,10 @@ const FloatingCopyButton = ({ text }: { text: string }) => {
       {copied ? <Check size={14} /> : <Copy size={14} />}
     </button>
   );
-};
+});
 
 /** 带语言标注的代码块：shiki 高亮 + header + 复制按钮 */
-const ShikiCodeBlock = ({ code, lang }: { code: string; lang: string }) => {
+const ShikiCodeBlock = memo(({ code, lang }: { code: string; lang: string }) => {
   const { html, loading } = useShikiHighlight(code, lang);
   return (
     <div className="rfp-relative rfp-group rfp-my-4">
@@ -96,9 +99,9 @@ const ShikiCodeBlock = ({ code, lang }: { code: string; lang: string }) => {
       )}
     </div>
   );
-};
+});
 
-export const MarkdownRenderer = forwardRef<RendererHandle, MarkdownRendererProps>(({ url }, ref) => {
+export const MarkdownRenderer = memo(forwardRef<RendererHandle, MarkdownRendererProps>(({ url }, ref) => {
   const t = useTranslator();
   const fetcher = useFetcher();
 
@@ -174,43 +177,9 @@ export const MarkdownRenderer = forwardRef<RendererHandle, MarkdownRendererProps
     },
   }), [getToolbarGroups]);
 
-  if (loading) {
-    return (
-      <div className="rfp-flex rfp-items-center rfp-justify-center rfp-w-full rfp-h-full">
-        <div className="rfp-w-12 rfp-h-12 rfp-border-4 rfp-border-line-strong rfp-border-t-spinner-head rfp-rounded-full rfp-animate-spin" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return <RendererError message={error} />;
-  }
-
-  // 源码视图
-  if (viewMode === 'source') {
-    return (
-      <div className="rfp-w-full rfp-h-full rfp-overflow-auto rfp-bg-code-bg">
-        {sourceHtml ? (
-          <div
-            className="rfp-shiki-wrapper with-line-numbers"
-            dangerouslySetInnerHTML={{ __html: sourceHtml }}
-          />
-        ) : (
-          <pre className="rfp-p-6 rfp-text-fg-primary rfp-font-mono rfp-text-sm rfp-whitespace-pre-wrap rfp-break-words">
-            {content}
-          </pre>
-        )}
-      </div>
-    );
-  }
-
-  // 预览视图
-  return (
-    <div className="rfp-w-full rfp-h-full rfp-overflow-auto rfp-py-6 rfp-px-4">
-      <ReactMarkdown
-            remarkPlugins={[remarkGfm, remarkMath]}
-            rehypePlugins={[rehypeRaw, rehypeKatex]}
-            components={{
+  const markdownComponentsRef = useRef<Components | null>(null);
+  if (!markdownComponentsRef.current) {
+    markdownComponentsRef.current = {
               code({ node: _node, inline, className, children, ...props }: any) {
                 const match = /language-(\w+)/.exec(className || '');
                 const codeString = String(children).replace(/\n$/, '');
@@ -338,10 +307,49 @@ export const MarkdownRenderer = forwardRef<RendererHandle, MarkdownRendererProps
               del: ({ children }) => (
                 <del className="rfp-text-fg-muted rfp-line-through">{children}</del>
               ),
-            }}
+    };
+  }
+
+  if (loading) {
+    return (
+      <div className="rfp-flex rfp-items-center rfp-justify-center rfp-w-full rfp-h-full">
+        <div className="rfp-w-12 rfp-h-12 rfp-border-4 rfp-border-line-strong rfp-border-t-spinner-head rfp-rounded-full rfp-animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return <RendererError message={error} />;
+  }
+
+  // 源码视图
+  if (viewMode === 'source') {
+    return (
+      <div className="rfp-w-full rfp-h-full rfp-overflow-auto rfp-bg-code-bg">
+        {sourceHtml ? (
+          <div
+            className="rfp-shiki-wrapper with-line-numbers"
+            dangerouslySetInnerHTML={{ __html: sourceHtml }}
+          />
+        ) : (
+          <pre className="rfp-p-6 rfp-text-fg-primary rfp-font-mono rfp-text-sm rfp-whitespace-pre-wrap rfp-break-words">
+            {content}
+          </pre>
+        )}
+      </div>
+    );
+  }
+
+  // 预览视图
+  return (
+    <div className="rfp-w-full rfp-h-full rfp-overflow-auto rfp-py-6 rfp-px-4">
+      <ReactMarkdown
+            remarkPlugins={markdownRemarkPlugins}
+            rehypePlugins={markdownRehypePlugins}
+            components={markdownComponentsRef.current}
           >
             {content}
           </ReactMarkdown>
     </div>
   );
-});
+}));
