@@ -103,6 +103,9 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
+    // 库从自动扫描中排除，但其懒加载渲染器仍依赖预构建。
+    // 显式扫描库入口及其动态导入，在启动时发现全部渲染器依赖。
+    entries: [resolve(__dirname, 'index.html'), angularFesm],
     exclude: ['pdfjs-dist', '@eternalheart/angular-file-preview'],
   },
   worker: {
