@@ -19,6 +19,7 @@ import {
     <div
       #containerRef
       class="afp-w-full afp-h-full afp-flex afp-flex-col md:afp-flex-row afp-min-h-0 afp-min-w-0"
+      [style.flex-direction]="desktopLayout() ? null : 'column'"
     >
       @if (isMobileTab()) {
         <div class="afp-flex afp-flex-shrink-0 afp-border-b afp-border-line-weak afp-bg-surface-toolbar">
@@ -60,6 +61,7 @@ import {
           role="separator"
           aria-orientation="vertical"
           class="split-divider afp-hidden md:afp-block afp-relative afp-w-1.5 afp-flex-shrink-0 afp-cursor-col-resize afp-transition-colors"
+          [style.display]="desktopLayout() ? null : 'none'"
           [class.dragging]="dragging()"
           (mousedown)="onDividerDown($event)"
         >
@@ -110,9 +112,11 @@ export class ResizableSplit {
   readonly isDesktop = signal(false);
   readonly activeTab = signal<'left' | 'right'>('left');
 
-  readonly isMobileTab = computed(() => this.mobileTabMode() && !this.isDesktop());
+  readonly containerWide = signal(true);
+  readonly desktopLayout = computed(() => this.isDesktop() && this.containerWide());
+  readonly isMobileTab = computed(() => this.mobileTabMode() && !this.desktopLayout());
   readonly leftStyle = computed(() =>
-    this.isDesktop() ? { width: `${this.leftWidth()}px` } : undefined,
+    this.desktopLayout() ? { width: `${this.leftWidth()}px` } : undefined,
   );
   readonly leftPaneClass = computed(() =>
     this.isMobileTab()
@@ -156,6 +160,16 @@ export class ResizableSplit {
       handler();
       mq.addEventListener('change', handler);
       onCleanup(() => mq.removeEventListener('change', handler));
+    });
+
+    effect((onCleanup) => {
+      const el = this.container()?.nativeElement;
+      if (!el || typeof ResizeObserver === 'undefined') return;
+      const update = () => this.containerWide.set(el.getBoundingClientRect().width >= this.minLeftWidth() + this.minRightWidth() + 6);
+      update();
+      const observer = new ResizeObserver(update);
+      observer.observe(el);
+      onCleanup(() => observer.disconnect());
     });
 
     this.destroyRef.onDestroy(() => {

@@ -62,6 +62,7 @@ export const ResizableSplit = forwardRef<ResizableSplitHandle, ResizableSplitPro
   });
   const [dragging, setDragging] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
+  const [containerWide, setContainerWide] = useState(true);
   const [activeTab, setActiveTab] = useState<'left' | 'right'>('left');
 
   useImperativeHandle(ref, () => ({
@@ -77,6 +78,16 @@ export const ResizableSplit = forwardRef<ResizableSplitHandle, ResizableSplitPro
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
   }, [desktopMedia]);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const update = () => setContainerWide(el.getBoundingClientRect().width >= minLeftWidth + minRightWidth + 6);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [minLeftWidth, minRightWidth]);
 
   // 拖动
   useEffect(() => {
@@ -121,7 +132,9 @@ export const ResizableSplit = forwardRef<ResizableSplitHandle, ResizableSplitPro
   }, []);
 
   // 移动端 Tab 模式
-  if (mobileTabMode && !isDesktop) {
+  const desktopLayout = isDesktop && containerWide;
+
+  if (mobileTabMode && !desktopLayout) {
     return (
       <div
         ref={containerRef}
@@ -171,10 +184,11 @@ export const ResizableSplit = forwardRef<ResizableSplitHandle, ResizableSplitPro
     <div
       ref={containerRef}
       className={`rfp-w-full rfp-h-full rfp-flex rfp-flex-col md:rfp-flex-row rfp-min-h-0 rfp-min-w-0 ${className}`}
+      style={desktopLayout ? undefined : { flexDirection: 'column' }}
     >
       <div
         className="rfp-min-h-0 rfp-min-w-0 rfp-flex-shrink-0 rfp-w-full rfp-max-h-60 md:rfp-h-full md:rfp-max-h-none"
-        style={isDesktop ? { width: `${leftWidth}px` } : undefined}
+        style={desktopLayout ? { width: `${leftWidth}px` } : undefined}
       >
         {left}
       </div>
@@ -186,6 +200,7 @@ export const ResizableSplit = forwardRef<ResizableSplitHandle, ResizableSplitPro
         className={`rfp-hidden md:rfp-block rfp-relative rfp-w-1.5 rfp-flex-shrink-0 rfp-cursor-col-resize rfp-transition-colors ${
           dragging ? 'rfp-bg-surface-toolbar' : 'rfp-bg-surface-2 hover:rfp-bg-surface-3'
         }`}
+        style={desktopLayout ? undefined : { display: 'none' }}
       >
         {/* 加宽命中区，改善拖动体验 */}
         <span className="rfp-absolute rfp-inset-y-0 -rfp-left-1 -rfp-right-1" />

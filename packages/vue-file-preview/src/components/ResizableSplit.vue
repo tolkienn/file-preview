@@ -47,16 +47,19 @@ const leftWidth = ref<number>(
 );
 const dragging = ref(false);
 const isDesktop = ref(false);
+const containerWide = ref(true);
 const activeTab = ref<'left' | 'right'>('left');
 
 let mq: MediaQueryList | null = null;
+let resizeObserver: ResizeObserver | null = null;
 const mqHandler = () => {
   if (mq) isDesktop.value = mq.matches;
 };
 
 const leftStyle = computed(() =>
-  isDesktop.value ? { width: `${leftWidth.value}px` } : undefined
+  isDesktop.value && containerWide.value ? { width: `${leftWidth.value}px` } : undefined
 );
+const desktopLayout = computed(() => isDesktop.value && containerWide.value);
 
 const onMove = (e: MouseEvent) => {
   if (!containerRef.value) return;
@@ -100,11 +103,19 @@ onMounted(() => {
     mq = window.matchMedia(props.desktopMedia);
     mqHandler();
     mq.addEventListener('change', mqHandler);
+    const updateSize = () => {
+      if (containerRef.value) containerWide.value = containerRef.value.getBoundingClientRect().width >= props.minLeftWidth + props.minRightWidth + 6;
+    };
+    updateSize();
+    resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updateSize) : null;
+    resizeObserver?.observe(containerRef.value!);
   }
 });
 
 onBeforeUnmount(() => {
   if (mq) mq.removeEventListener('change', mqHandler);
+  resizeObserver?.disconnect();
+  resizeObserver = null;
   window.removeEventListener('mousemove', onMove);
   window.removeEventListener('mouseup', onUp);
   if (dragging.value) {
@@ -131,9 +142,10 @@ defineExpose({ switchTab });
   <div
     ref="containerRef"
     class="vfp-w-full vfp-h-full vfp-flex vfp-flex-col md:vfp-flex-row vfp-min-h-0 vfp-min-w-0"
+    :style="desktopLayout ? undefined : { flexDirection: 'column' }"
   >
     <!-- 移动端 Tab 模式 -->
-    <template v-if="mobileTabMode && !isDesktop">
+    <template v-if="mobileTabMode && !desktopLayout">
       <div class="vfp-flex vfp-flex-shrink-0 vfp-border-b vfp-border-line-weak vfp-bg-surface-toolbar">
         <button
           type="button"
@@ -177,6 +189,7 @@ defineExpose({ switchTab });
         aria-orientation="vertical"
         class="split-divider vfp-hidden md:vfp-block vfp-relative vfp-w-1.5 vfp-flex-shrink-0 vfp-cursor-col-resize vfp-transition-colors"
         :class="dragging ? 'dragging' : ''"
+        :style="desktopLayout ? undefined : { display: 'none' }"
         @mousedown="onDividerDown"
       >
         <span class="vfp-absolute vfp-inset-y-0 hit-area" />
@@ -190,13 +203,13 @@ defineExpose({ switchTab });
 
 <style scoped>
 .split-divider {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--fp-line-weak);
 }
 .split-divider:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--fp-line);
 }
 .split-divider.dragging {
-  background: rgba(255, 255, 255, 0.4);
+  background: var(--fp-line-strong);
 }
 .hit-area {
   left: -4px;
